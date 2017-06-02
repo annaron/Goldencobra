@@ -6,15 +6,13 @@ module Goldencobra
 
     def login
       @errors = []
-      if params[:usermodel] && params[:usermodel].constantize &&
-         params[:usermodel].constantize.present? &&
-         params[:usermodel].constantize.attribute_method?(:email)
+      if usermodel
         # search for user/visitor per email address
-        @usermodel = params[:usermodel].constantize.where(email: params[:loginmodel][:email]).first
-        if @usermodel.blank? && params[:usermodel].constantize.attribute_method?(:username)
+        @usermodel = usermodel.where(email: params[:loginmodel][:email]).first
+        if @usermodel.blank? && usermodel.attribute_method?(:username)
           # if not found, search for visitor per email address
           # only visitor has attribute_method "username"
-          @usermodel = params[:usermodel].constantize.where(username: params[:loginmodel][:email]).first
+          @usermodel = usermodel.where(username: params[:loginmodel][:email]).first
         end
       end
 
@@ -38,10 +36,8 @@ module Goldencobra
     end
 
     def logout
-      if params[:usermodel] && params[:usermodel].constantize &&
-         params[:usermodel].constantize.present? &&
-         params[:usermodel].constantize.attribute_method?(:email)
-        sign_out params[:usermodel].downcase.to_sym
+      if usermodel
+        sign_out usermodel.to_s.downcase.to_sym
         reset_session
         flash[:notice] = I18n.translate("signed_out", scope: ["devise", "sessions"])
       end
@@ -53,6 +49,15 @@ module Goldencobra
     end
 
     def register
+    end
+
+    private
+
+    def usermodel
+      return false if params[:usermodel].blank?
+      return false unless %w(user visitor).include?(params[:usermodel].to_s.downcase)
+
+      params[:usermodel].constantize
     end
   end
 end
